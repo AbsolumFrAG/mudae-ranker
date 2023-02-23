@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- Libraries -->
+    <script
+      src="https://code.jquery.com/jquery-3.6.3.min.js"
+      integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-message-box@3.2.2/dist/messagebox.min.js"></script>
+    <script src="DnD/Sortable.min.js"></script>
+    <script src="DnD/angular-legacy-sortable.js"></script>
+    <!-- App -->
+    <script src="Apps/mudaeRanker.js"></script>
+
+    <!-- Controller -->
+    <script src="Controllers/mudaeRankerController.js"></script>
+
+    <!-- Services -->
+    <script src="Services/characterService.js"></script>
+    <script src="Services/utilityService.js"></script>
+    <script src="Services/preferenceListService.js"></script>
+
+    <!-- Directives -->
+    <script src="Directives/mudrBody.js"></script>
+    <script src="Directives/mudrCardClick.js"></script>
+    <script src="Directives/mudrCardClose.js"></script>
+    <script src="Directives/mudrCardDelete.js"></script>
+    <script src="Directives/mudrExportClean.js"></script>
+    <script src="Directives/mudrExportJson.js"></script>
+    <script src="Directives/mudrExportSort.js"></script>
+    <script src="Directives/mudrLeftCompare.js"></script>
+    <script src="Directives/mudrLeftCompareSkip.js"></script>
+    <script src="Directives/mudrLeftCompareUrl.js"></script>
+    <script src="Directives/mudrNewCharacterCard.js"></script>
+    <script src="Directives/mudrNewThumb.js"></script>
+    <script src="Directives/mudrParseInput.js"></script>
+    <script src="Directives/mudrReset.js"></script>
+    <script src="Directives/mudrRankingResume.js"></script>
+    <script src="Directives/mudrRankingStart.js"></script>
+    <script src="Directives/mudrRankingStop.js"></script>
+    <script src="Directives/mudrRightCompare.js"></script>
+    <script src="Directives/mudrRightCompareSkip.js"></script>
+    <script src="Directives/mudrRightCompareUrl.js"></script>
+    <script src="Directives/mudrSkipInput.js"></script>
+    <script src="Directives/mudrUrlInput.js"></script>
+
+    <!-- Styles -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="Styles/mudaeRankerStyles.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-message-box@3.2.2/dist/messagebox.min.css"
+    />
+    <title>Mudae Ranker</title>
+  </head>
+  <body
+    data-ng-app="mudaeRanker"
+    data-ng-controller="mudaeRankerController"
+    data-ng-attr-class="{{ getModeClassName() }}"
+    data-mudr-body
+  >
+    <textarea
+      id="InputField"
+      class="InputField"
+      placeholder="Collez ici une exportation précédente ou les résultats de $mmas"
+    ></textarea>
+    <textarea
+      id="OutputField"
+      class="OutputField"
+      placeholder="Les résultats exportés apparaîtront ici"
+    ></textarea>
+    <br />
+    <div style="text-align: center">
+      <button data-mudr-parse-input>Parser l'entrée</button>
+      <button data-mudr-ranking-start data-ng-disabled="!hasCharacters()">
+        Commencer le classement
+      </button>
+      <button
+        data-mudr-ranking-resume
+        data-ng-disabled="!hasCharacters() || !getRankingInProgress()"
+      >
+        Reprendre le classement
+      </button>
+      <button data-mudr-export-json data-ng-disabled="!hasCharacters()">
+        Exporter tous les personnages
+      </button>
+      <button data-mudr-export-sort data-ng-disabled="!hasCharacters()">
+        Générer les commandes de tri
+      </button>
+      <button data-mudr-export-clean>Nettoyer la sortie</button>
+      <button data-mudr-reset>Réinitialiser</button>
+    </div>
+    <br />
+    <br />
+
+    <div class="CharacterThumb" data-mudr-new-thumb>
+      <div class="CharacterNew">&#127381;</div>
+    </div>
+
+    <div class="CharacterCardContainer" data-ng-sortable="sortableConfig">
+      <div
+        data-ng-repeat="c in characters"
+        data-ng-style="{'background-color': c.skip ? 'rgba(255,0,0,.9)' : ''}"
+        data-ng-attr-class="{{ c.className }}"
+        data-ng-attr-title="{{ c.series + ': ' + c.name}}"
+        data-mudr-card-click
+        data-character-index="{{ $index }}"
+      >
+        <div class="CharacterName">
+          <span class="CharacterNameText">{{ c.originalName }}</span
+          ><span
+            class="CharacterClose"
+            title="Fermer la carte"
+            data-mudr-card-close
+            >&#10062;</span
+          >
+        </div>
+        <div class="CharacterSeries">{{ c.series }}</div>
+        <img data-ng-src="{{ c.imageUrl }}" />
+        <div class="CharacterURL">
+          <label
+            >URL :
+            <input type="text" value="{{ c.imageUrl }}" data-mudr-url-input
+          /></label>
+        </div>
+        <div class="CharacterSkip">
+          <label data-mudr-skip-input
+            ><input type="checkbox" data-ng-model="c.skip" />Passer ?</label
+          ><span
+            class="CharacterDelete"
+            title="Supprimer le personnage"
+            data-mudr-card-delete
+            >&#128465;</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="NewCharacterCard"
+      class="CharacterThumb CharacterFull NewCharacterCard"
+      style="display: none"
+      data-mudr-new-character-card
+    >
+      <div class="CharacterName">
+        <input
+          id="NewCharacterName"
+          type="text"
+          class="CharacterNameText"
+          placeholder="Nom du personnage"
+        /><span
+          id="NewCharacterCancel"
+          class="CharacterClose"
+          title="Fermer la carte"
+          >&#10062;</span
+        >
+      </div>
+      <div>
+        Veillez à indiquer le nom complet, y compris les abréviations des
+        séries. Par exemple : "Rem (RZ)", et non "Rem".
+      </div>
+      <div class="CharacterSeries">
+        <input id="NewCharacterSeries" type="text" placeholder="Origine" />
+      </div>
+      <img />
+      <div class="CharacterURL">
+        <label>URL : <input id="NewCharacterUrl" type="text" value="" /></label>
+      </div>
+      <div class="CharacterSkip">
+        <label><input id="NewCharacterSkip" type="checkbox" />Passer ?</label
+        ><span
+          id="NewCharacterAdd"
+          class="CharacterClose"
+          title="Ajouter un personnage"
+          >&#9989;</span
+        >
+      </div>
+    </div>
+
+    <div id="RankingBlocker" class="RankingBlocker"></div>
+    <div id="RankingContainer" class="RankingContainer">
+      <div class="RankingContainerTitle">
+        Lequel est le meilleur ?
+        <span class="RankingContainerClose" data-mudr-ranking-stop
+          >&#10062;</span
+        >
+      </div>
+      <div id="RankingCardContainer" class="RankingCardContainer">
+        <div
+          class="CharacterThumb CharacterFull"
+          data-ng-attr-title="{{ getLeftCompare().series + ': ' + getLeftCompare().name}}"
+          data-mudr-left-compare
+        >
+          <div class="CharacterName">
+            <span class="CharacterNameText">{{ getLeftCompare().name }}</span>
+          </div>
+          <div class="CharacterSeries">{{ getLeftCompare().series }}</div>
+          <img data-ng-src="{{ getLeftCompare().imageUrl }}" />
+          <div class="CharacterURL">
+            <label
+              >URL:
+              <input
+                type="text"
+                value="{{ getLeftCompare().imageUrl }}"
+                data-mudr-left-compare-url
+            /></label>
+          </div>
+          <div class="CharacterSkip">
+            <!-- This wasn't working so... I worked around it! Who needs to solve problems when you can work around them? -->
+            <button data-mudr-left-compare-skip>Passer</button>
+          </div>
+        </div>
+
+        <div
+          class="CharacterThumb CharacterFull"
+          data-ng-attr-title="{{ getRightCompare().series + ': ' + getRightCompare().name}}"
+          data-mudr-right-compare
+        >
+          <div class="CharacterName">
+            <span class="CharacterNameText">{{ getRightCompare().name }}</span>
+          </div>
+          <div class="CharacterSeries">{{ getRightCompare().series }}</div>
+          <img data-ng-src="{{ getRightCompare().imageUrl }}" />
+          <div class="CharacterURL">
+            <label
+              >URL :
+              <input
+                type="text"
+                value="{{ getRightCompare().imageUrl }}"
+                data-mudr-right-compare-url
+            /></label>
+          </div>
+          <div class="CharacterSkip">
+            <button data-mudr-right-compare-skip>Passer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
